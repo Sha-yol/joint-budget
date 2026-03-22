@@ -1,0 +1,23 @@
+# ── Expense Sync Configuration ───────────────────────────────────────────────
+# Copy this file to config.yaml and fill in your values.
+
+# Google Sheets settings
+spreadsheet_id: "your-spreadsheet-id-from-the-url"  # from docs.google.com/spreadsheets/d/{THIS_PART}/edit
+credentials_path: "credentials.json"  # Path to your Google service account JSON key
+sheet_name: "expenses"  # Worksheet tab name (the raw data sheet; other tabs like dashboard/budget review can reference it)
+
+# Names to match in Splitwise columns (partial, case-insensitive)
+person_names:
+  - "Alice"
+  - "Bob"
+
+# ── Input files ──────────────────────────────────────────────────────────────
+# Drop all export files (CC .xlsx + Splitwise .csv) into one folder.
+# The script auto-detects file types:
+#   .xlsx with Isracard header → CC transaction file
+#   .csv with ≤2 person columns → Splitwise regular (1:1)
+#   .csv with 3+ person columns → Splitwise group
+#
+# Safe to include multiple months of CC files — dedup handles overlaps.
+
+input_dir: "example_input"

@@ -1,0 +1,13 @@
+[project]
+name = "joint-budget"
+version = "0.1.0"
+description = "Consolidate CC and Splitwise expenses into Google Sheets"
+requires-python = ">=3.10"
+dependencies = [
+    "gspread>=6.0.0",
+    "openpyxl>=3.1.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+sync-expenses = "sync_expenses:main"
