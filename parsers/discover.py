@@ -6,10 +6,14 @@ from pathlib import Path
 import openpyxl
 
 
+_WOLT_HEADER = ["Date", "Category", "Amount", "Currency Symbol", "Store"]
+
+
 def _classify_csv(file_path: str) -> str | None:
     """
-    Classify a CSV as 'splitwise_regular', 'splitwise_group', or None.
+    Classify a CSV as 'splitwise_regular', 'splitwise_group', 'wolt', or None.
 
+    Wolt CSVs have a header: Date,Category,Amount,Currency Symbol,Store
     Splitwise CSVs have a header starting with "Date,Description,Category,Cost,Currency".
     Regular (1:1) exports have exactly 2 person columns after Currency.
     Group exports have 3+ person columns.
@@ -19,15 +23,20 @@ def _classify_csv(file_path: str) -> str | None:
 
     header_line = None
     for line in lines:
-        if line.strip().startswith("Date,"):
+        stripped = line.strip()
+        if stripped.startswith("Date,") or stripped.startswith("Date\t"):
             header_line = line
             break
 
     if header_line is None:
         return None
 
-    reader = csv.reader([header_line])
-    fields = next(reader)
+    delimiter = "\t" if "\t" in header_line else ","
+    reader = csv.reader([header_line], delimiter=delimiter)
+    fields = [f.strip() for f in next(reader)]
+
+    if fields == _WOLT_HEADER:
+        return "wolt"
 
     expected_start = ["Date", "Description", "Category", "Cost", "Currency"]
     if fields[:5] != expected_start:
@@ -67,7 +76,7 @@ def discover_files(input_dir: str, person_names: list[str]) -> dict:
         }
     """
     input_path = Path(input_dir)
-    result = {"cc_files": [], "splitwise_regular": [], "splitwise_group": []}
+    result = {"cc_files": [], "splitwise_regular": [], "splitwise_group": [], "wolt": []}
 
     for f in sorted(input_path.iterdir()):
         if f.suffix.lower() in (".xlsx", ".xls") and _is_cc_excel(str(f)):

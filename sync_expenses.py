@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-from parsers import discover_files, parse_cc_excel, parse_splitwise_regular, parse_splitwise_group
+from parsers import discover_files, parse_cc_excel, parse_splitwise_regular, parse_splitwise_group, parse_wolt
 from sheets import sync_to_sheets
 
 
@@ -23,6 +23,7 @@ def load_config(config_path: str) -> dict:
 def collect_expenses(config: dict) -> list[dict]:
     """Parse all input files and return a flat list of expense dicts."""
     person_names = config.get("person_names", ["Alice", "Bob"])
+    wolt_tax_factor = config.get("wolt_tax_factor", 1.0)
     all_expenses = []
 
     input_dir = config.get("input_dir")
@@ -33,6 +34,7 @@ def collect_expenses(config: dict) -> list[dict]:
             discovered["cc_files"]
             + discovered["splitwise_regular"]
             + discovered["splitwise_group"]
+            + discovered["wolt"]
         )
         skipped = [
             str(f)
@@ -42,6 +44,7 @@ def collect_expenses(config: dict) -> list[dict]:
         print(f"  CC files:               {[Path(p).name for p in discovered['cc_files']]}")
         print(f"  Splitwise (1:1):        {[Path(p).name for p in discovered['splitwise_regular']]}")
         print(f"  Splitwise (group 3+):   {[Path(p).name for p in discovered['splitwise_group']]}")
+        print(f"  Wolt orders:            {[Path(p).name for p in discovered['wolt']]}")
         if skipped:
             print(f"  Skipped (unrecognized): {[Path(p).name for p in skipped]}")
         print()
@@ -63,6 +66,12 @@ def collect_expenses(config: dict) -> list[dict]:
             expenses = parse_splitwise_group(path, person_names)
             print(f"  → {len(expenses)} expenses (combined share)")
             all_expenses.extend(expenses)
+
+        for path in discovered["wolt"]:
+            print(f"Parsing Wolt orders: {path}")
+            expenses = parse_wolt(path, tax_factor=wolt_tax_factor)
+            print(f"  → {len(expenses)} orders")
+            all_expenses.extend(expenses)
     else:
         for cc_file in config.get("cc_files", []):
             path = cc_file["path"]
@@ -83,6 +92,13 @@ def collect_expenses(config: dict) -> list[dict]:
             print(f"Parsing Splitwise group: {path}")
             expenses = parse_splitwise_group(path, person_names)
             print(f"  → {len(expenses)} expenses (combined share)")
+            all_expenses.extend(expenses)
+
+        for wolt_file in config.get("wolt_files", []):
+            path = wolt_file["path"]
+            print(f"Parsing Wolt orders: {path}")
+            expenses = parse_wolt(path, tax_factor=wolt_tax_factor)
+            print(f"  → {len(expenses)} orders")
             all_expenses.extend(expenses)
 
     return all_expenses

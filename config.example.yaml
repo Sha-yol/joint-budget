@@ -11,12 +11,20 @@ person_names:
   - "Alice"
   - "Bob"
 
+# ── Wolt tax factor ───────────────────────────────────────────────────────────
+# If Wolt payments come from pre-tax salary, set this to your marginal tax rate
+# so each order amount is multiplied by it to reflect the true net cost.
+# E.g. a factor below 1 discounts each NIS accordingly.
+# Default: 1.0 (no adjustment).
+wolt_tax_factor: 1.0
+
 # ── Input files ──────────────────────────────────────────────────────────────
-# Drop all export files (CC .xlsx + Splitwise .csv) into one folder.
-# The script auto-detects file types:
-#   .xlsx with Isracard header → CC transaction file
-#   .csv with ≤2 person columns → Splitwise regular (1:1)
-#   .csv with 3+ person columns → Splitwise group
+# Drop all export files into one folder. The script auto-detects file types:
+#   .xlsx with Isracard header    → CC transaction file
+#   .csv with ≤2 person columns   → Splitwise regular (1:1)
+#   .csv with 3+ person columns   → Splitwise group
+#   .csv with Wolt header         → Wolt order history
+#     (tab-separated: Date, Category, Amount, Currency Symbol, Store)
 #
 # Safe to include multiple months of CC files — dedup handles overlaps.
 

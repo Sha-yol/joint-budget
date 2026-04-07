@@ -1,0 +1,42 @@
+# ── Expense Sync Configuration ───────────────────────────────────────────────
+# Copy this file to config.yaml and fill in your values.
+
+# Google Sheets settings
+spreadsheet_id: "your-spreadsheet-id-from-the-url"  # The ID from the sheet URL: docs.google.com/spreadsheets/d/{THIS_PART}/edit
+credentials_path: "credentials.json"  # Path to your Google service account JSON key
+sheet_name: "expenses"  # Worksheet tab name
+
+# Names to match in Splitwise columns (partial, case-insensitive)
+person_names:
+  - "Alice"
+  - "Bob"
+
+# ── Wolt tax factor ───────────────────────────────────────────────────────────
+# Marginal tax rate applied to Wolt order amounts (see config.example.yaml).
+wolt_tax_factor: 1.0
+
+# ── Input files ──────────────────────────────────────────────────────────────
+# Supported CSV types:
+#   Splitwise regular (≤2 person columns after Currency field)
+#   Splitwise group   (3+ person columns after Currency field)
+#   Wolt order history (tab-separated: Date, Category, Amount, Currency Symbol, Store)
+#
+# Update these paths each month before running.
+
+# Joint credit card exports (Isracard Excel format)
+cc_files:
+  - path: "example_input/1234_03_2026.xlsx"
+  # - path: "example_input/XXXX_03_2026.xlsx"  # second CC
+
+# Splitwise 1:1 export (non-group expenses between you and your partner)
+splitwise_regular_files:
+  - path: "example_input/splitwise-1on1-export.csv"
+
+# Splitwise group exports
+splitwise_group_files:
+  - path: "example_input/splitwise-group-a-export.csv"
+  - path: "example_input/splitwise-group-b-export.csv"
+
+# Wolt order history exports
+wolt_files:
+  - path: "example_input/wolt-orders-export.csv"
