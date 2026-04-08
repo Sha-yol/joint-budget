@@ -15,3 +15,9 @@ config.yaml
 
 # uv lock
 uv.lock
+
+# sensitive transaction data
+example_input/
+
+# claude
+.claude/
