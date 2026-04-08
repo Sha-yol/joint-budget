@@ -15,6 +15,7 @@ from parsers import (
     discover_files,
     parse_cc_excel,
     parse_cibus,
+    parse_mizrahi_ccs_excel,
     parse_splitwise_regular,
     parse_splitwise_group,
     parse_wolt,
@@ -43,6 +44,7 @@ def collect_expenses(config: dict) -> list[dict]:
         all_discovered = (
             discovered["cc_files"]
             + discovered["cibus"]
+            + discovered["mizrahi_ccs"]
             + discovered["splitwise_regular"]
             + discovered["splitwise_group"]
             + discovered["wolt"]
@@ -54,6 +56,7 @@ def collect_expenses(config: dict) -> list[dict]:
         ]
         print(f"  CC files:               {[Path(p).name for p in discovered['cc_files']]}")
         print(f"  Cibus files:            {[Path(p).name for p in discovered['cibus']]}")
+        print(f"  Mizrahi CCs files:      {[Path(p).name for p in discovered['mizrahi_ccs']]}")
         print(f"  Splitwise (1:1):        {[Path(p).name for p in discovered['splitwise_regular']]}")
         print(f"  Splitwise (group 3+):   {[Path(p).name for p in discovered['splitwise_group']]}")
         print(f"  Wolt orders:            {[Path(p).name for p in discovered['wolt']]}")
@@ -70,6 +73,12 @@ def collect_expenses(config: dict) -> list[dict]:
         for path in discovered["cibus"]:
             print(f"Parsing Cibus: {path}")
             expenses = parse_cibus(path, pretax_factor=pretax_factor)
+            print(f"  → {len(expenses)} transactions")
+            all_expenses.extend(expenses)
+
+        for path in discovered["mizrahi_ccs"]:
+            print(f"Parsing Mizrahi CCs: {path}")
+            expenses = parse_mizrahi_ccs_excel(path)
             print(f"  → {len(expenses)} transactions")
             all_expenses.extend(expenses)
 
@@ -102,6 +111,13 @@ def collect_expenses(config: dict) -> list[dict]:
             path = cibus_file["path"]
             print(f"Parsing Cibus file: {path}")
             expenses = parse_cibus(path, pretax_factor=pretax_factor)
+            print(f"  → {len(expenses)} transactions")
+            all_expenses.extend(expenses)
+
+        for mz_file in config.get("mizrahi_ccs_files", []):
+            path = mz_file["path"]
+            print(f"Parsing Mizrahi CCs file: {path}")
+            expenses = parse_mizrahi_ccs_excel(path)
             print(f"  → {len(expenses)} transactions")
             all_expenses.extend(expenses)
 

@@ -32,10 +32,11 @@ The tool reads expense exports and appends new rows to a Google Sheet, using a d
 
 Two input modes, configured in `config.yaml`:
 - **`input_dir`** — auto-discovers and classifies all files in a directory (preferred)
-- **Explicit lists** (`cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`) — for manual file specification
+- **Explicit lists** (`cc_files`, `cibus_files`, `mizrahi_ccs_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`) — for manual file specification
 
 ### Parsers (`parsers/`)
 
+- `mizrahi_ccs.py` — Mizrahi bank "all credit cards" xlsx export. Has 3 currency tabs (`חיובים בשקלים` / `בדולרים` / `באירו`); only the NIS sheet is read (foreign-currency sheets are currently empty). Inside the NIS sheet, multiple card blocks are stacked vertically — each begins with a header `חשבון כרטיס: ... ארבע ספרות אחרונות NNNN`, then a transaction table. The parser walks all blocks, emitting rows whose `מקור` is the per-block last-4. Zero-amount rows (e.g. waived `דמי כרטיס`) are skipped. Date format is `dd/mm/yyyy` (unlike Isracard's `dd.mm.yy`).
 - `cc.py` — Isracard Excel exports. Extracts CC last-4 digits as source identifier; reads Hebrew-header transaction table (columns: date, business name, ..., charge amount)
 - `splitwise.py` — Two variants:
   - **Regular** (1:1): uses total `Cost` column as the joint expense
@@ -44,7 +45,7 @@ Two input modes, configured in `config.yaml`:
 - `cibus.py` — Cibus (Pluxee) meal-card xlsx exports. Each row has an employer/Cibus-credit portion (`השתתפות המעסיק`) and an optional CC supplement (`שולם באשראי`) used when Cibus credit runs short. The amount written to the sheet is `employer × pretax_factor + cc` — the CC supplement is NOT discounted because it comes from a personal CC, not pre-tax salary. Skips `Wolt - Wolt Gift Card` rows (loading Wolt wallet, not an expense) and rows whose status is not `הסתיים`. The `_id` is computed from the gross (`employer + cc`) so it's invariant to `pretax_factor` changes.
 - `common.py` — Shared: `make_expense()` builds normalized dicts; `make_expense_id()` generates a UUID5 from `date|source|description|amount:.2f` via `NAMESPACE_URL`. Also holds Splitwise CSV helpers (header detection, cost/date parsing, payment filter).
 - `discover.py` — File classification for `input_dir` mode:
-  - `.xlsx` → Cibus if the Hebrew header `שם בית העסק` is found in the first 10 rows; else CC if `תאריך רכישה` is found in the first 15 rows. (Cibus is checked first because both are xlsx.)
+  - `.xlsx` → Cibus if `שם בית העסק` is found in the first 10 rows; else Mizrahi CCs if the sheet `חיובים בשקלים` exists and contains `חשבון כרטיס` in its first 3 rows; else Isracard CC if `תאריך רכישה` is found in the first 15 rows. Order matters since all three formats are xlsx.
   - `.csv` → `wolt` if header exactly matches `["Date","Category","Amount","Currency Symbol","Store"]`; else Splitwise based on header `["Date","Description","Category","Cost","Currency",…]` and the count of non-empty person columns after `Currency` (≤2 → regular, 3+ → group).
 
 ### Cibus ↔ Wolt deduplication
@@ -78,4 +79,4 @@ The last two columns (`קטגוריית תקציב`, `הערות`) are manually 
 - `spreadsheet_id`, `credentials_path`, `sheet_name` — Google Sheets target
 - `person_names` — matched case-insensitively against Splitwise group column headers
 - `pretax_factor` — multiplier applied to Wolt amounts and to the Cibus-credit portion of Cibus rows (default `1.0`)
-- `input_dir` **or** explicit lists: `cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`
+- `input_dir` **or** explicit lists: `cc_files`, `cibus_files`, `mizrahi_ccs_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`

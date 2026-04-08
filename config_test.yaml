@@ -33,6 +33,10 @@ cc_files:
 cibus_files:
   - path: "example_input/cibus.xlsx"
 
+# Mizrahi bank 'all credit cards' xlsx export
+mizrahi_ccs_files:
+  - path: "example_input/כל הכרטיסים.xlsx"
+
 # Splitwise 1:1 export (non-group expenses between you and your partner)
 splitwise_regular_files:
   - path: "example_input/splitwise-1on1-export.csv"

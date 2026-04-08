@@ -50,28 +50,23 @@ def _classify_csv(file_path: str) -> str | None:
         return "splitwise_group"
 
 
-def _is_cc_excel(file_path: str) -> bool:
-    """Check if an Excel file looks like an Isracard CC export."""
-    try:
-        wb = openpyxl.load_workbook(file_path)
-        ws = wb.active
-        for row in ws.iter_rows(max_row=15, values_only=True):
-            cell = str(row[0] or "")
-            if "תאריך רכישה" in cell:
-                return True
-        return False
-    except Exception:
-        return False
+def _xlsx_has_marker(file_path: str, marker: str, max_row: int, sheet: str | None = None) -> bool:
+    """Return True if `marker` appears in column A of the first `max_row` rows.
 
-
-def _is_cibus_excel(file_path: str) -> bool:
-    """Check if an Excel file looks like a Cibus meal-card export."""
+    If `sheet` is given, that named sheet is used (returns False if missing);
+    otherwise the active sheet is used.
+    """
     try:
-        wb = openpyxl.load_workbook(file_path)
-        ws = wb.active
-        for row in ws.iter_rows(max_row=10, values_only=True):
+        wb = openpyxl.load_workbook(file_path, read_only=True)
+        if sheet is not None:
+            if sheet not in wb.sheetnames:
+                return False
+            ws = wb[sheet]
+        else:
+            ws = wb.active
+        for row in ws.iter_rows(max_row=max_row, values_only=True):
             cell = str(row[0] or "")
-            if "שם בית העסק" in cell:
+            if marker in cell:
                 return True
         return False
     except Exception:
@@ -90,14 +85,17 @@ def discover_files(input_dir: str, person_names: list[str]) -> dict:
         }
     """
     input_path = Path(input_dir)
-    result = {"cc_files": [], "cibus": [], "splitwise_regular": [], "splitwise_group": [], "wolt": []}
+    result = {"cc_files": [], "cibus": [], "mizrahi_ccs": [], "splitwise_regular": [], "splitwise_group": [], "wolt": []}
 
     for f in sorted(input_path.iterdir()):
+        path = str(f)
         if f.suffix.lower() in (".xlsx", ".xls"):
-            if _is_cibus_excel(str(f)):
-                result["cibus"].append(str(f))
-            elif _is_cc_excel(str(f)):
-                result["cc_files"].append(str(f))
+            if _xlsx_has_marker(path, "שם בית העסק", max_row=10):
+                result["cibus"].append(path)
+            elif _xlsx_has_marker(path, "חשבון כרטיס", max_row=3, sheet="חיובים בשקלים"):
+                result["mizrahi_ccs"].append(path)
+            elif _xlsx_has_marker(path, "תאריך רכישה", max_row=15):
+                result["cc_files"].append(path)
         elif f.suffix.lower() == ".csv":
             csv_type = _classify_csv(str(f))
             if csv_type:
