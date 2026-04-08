@@ -32,7 +32,7 @@ The tool reads expense exports and appends new rows to a Google Sheet, using a d
 
 Two input modes, configured in `config.yaml`:
 - **`input_dir`** — auto-discovers and classifies all files in a directory (preferred)
-- **Explicit lists** (`cc_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`) — for manual file specification
+- **Explicit lists** (`cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`) — for manual file specification
 
 ### Parsers (`parsers/`)
 
@@ -40,11 +40,19 @@ Two input modes, configured in `config.yaml`:
 - `splitwise.py` — Two variants:
   - **Regular** (1:1): uses total `Cost` column as the joint expense
   - **Group** (3+ people): computes combined share for configured `person_names` using sign convention (negative = owes, positive = paid and is owed → share = `Cost - value`, zero = not involved). `Category == "Payment"` rows (settlements) are filtered out.
-- `wolt.py` — Wolt order-history CSV (tab-separated). Skips `Wolt Gift Card` top-ups (already on CC) and zero-amount rows. Applies `wolt_tax_factor` multiplier to each amount — intended for when Wolt is paid from pre-tax salary at a marginal tax rate (a factor below 1 discounts each NIS accordingly). Default factor is `1.0`.
+- `wolt.py` — Wolt order-history CSV (tab-separated). Skips `Wolt Gift Card` top-ups (loading the Wolt wallet, accounted for via Cibus or CC) and zero-amount rows. Applies `pretax_factor` to each amount — intended for when Wolt is paid from pre-tax salary at a marginal tax rate (a factor below 1 discounts each NIS accordingly). Default factor is `1.0`.
+- `cibus.py` — Cibus (Pluxee) meal-card xlsx exports. Each row has an employer/Cibus-credit portion (`השתתפות המעסיק`) and an optional CC supplement (`שולם באשראי`) used when Cibus credit runs short. The amount written to the sheet is `employer × pretax_factor + cc` — the CC supplement is NOT discounted because it comes from a personal CC, not pre-tax salary. Skips `Wolt - Wolt Gift Card` rows (loading Wolt wallet, not an expense) and rows whose status is not `הסתיים`. The `_id` is computed from the gross (`employer + cc`) so it's invariant to `pretax_factor` changes.
 - `common.py` — Shared: `make_expense()` builds normalized dicts; `make_expense_id()` generates a UUID5 from `date|source|description|amount:.2f` via `NAMESPACE_URL`. Also holds Splitwise CSV helpers (header detection, cost/date parsing, payment filter).
 - `discover.py` — File classification for `input_dir` mode:
-  - `.xlsx` → CC if the Hebrew header `תאריך רכישה` is found in the first 15 rows.
+  - `.xlsx` → Cibus if the Hebrew header `שם בית העסק` is found in the first 10 rows; else CC if `תאריך רכישה` is found in the first 15 rows. (Cibus is checked first because both are xlsx.)
   - `.csv` → `wolt` if header exactly matches `["Date","Category","Amount","Currency Symbol","Store"]`; else Splitwise based on header `["Date","Description","Category","Cost","Currency",…]` and the count of non-empty person columns after `Currency` (≤2 → regular, 3+ → group).
+
+### Cibus ↔ Wolt deduplication
+
+A Wolt order paid directly via Cibus (or via Cibus-funded Wolt credit) appears in **both** the Cibus xlsx and the Wolt CSV. After all parsers run, `_dedup_cibus_wolt()` in `sync_expenses.py` matches each Cibus row whose description starts with `Wolt - ` against Wolt rows by `(date, store_norm)` (store_norm strips the `Wolt - ` prefix). On match, the Wolt row is dropped and the Cibus row's `סכום` is overridden using the Wolt gross as authoritative — Wolt reports the actual final amount after refunds (e.g. for weight-based items where extra credit was reserved and refunded back to Cibus credit). The Cibus row's `_id` is left untouched so reruns are idempotent regardless of whether the Wolt CSV is present.
+
+Math (X = Cibus credit, Y = CC supplement, W = Wolt gross, Z = X+Y-W = presumed refund):
+- final amount written = `(X - Z) * pretax_factor + Y` = `(W - Y) * pretax_factor + Y`
 
 ### Normalized expense dict
 
@@ -69,5 +77,5 @@ The last two columns (`קטגוריית תקציב`, `הערות`) are manually 
 
 - `spreadsheet_id`, `credentials_path`, `sheet_name` — Google Sheets target
 - `person_names` — matched case-insensitively against Splitwise group column headers
-- `wolt_tax_factor` — multiplier applied per Wolt order amount (default `1.0`)
-- `input_dir` **or** explicit lists: `cc_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`
+- `pretax_factor` — multiplier applied to Wolt amounts and to the Cibus-credit portion of Cibus rows (default `1.0`)
+- `input_dir` **or** explicit lists: `cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`

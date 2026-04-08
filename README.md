@@ -1,16 +1,18 @@
 # joint-budget
 
-Consolidate joint credit-card, Splitwise, and Wolt expenses into a single Google Sheet for monthly household budgeting.
+Consolidate joint credit-card, Cibus, Splitwise, and Wolt expenses into a single Google Sheet for monthly household budgeting.
 
-Built for an Israeli household workflow: Hebrew-headed Isracard exports, Splitwise expenses split across multiple people and groups, and Wolt orders charged from pre-tax salary.
+Built for an Israeli household workflow: Hebrew-headed Isracard exports, Cibus (Pluxee) meal-card xlsx, Splitwise expenses split across multiple people and groups, and Wolt orders charged from pre-tax salary.
 
 ## What it does
 
 Drop your monthly export files into one folder and run one command. The tool:
 
 - Parses **Isracard credit card** Excel exports (Hebrew headers, multi-card aware).
+- Parses **Cibus** (Pluxee) meal-card xlsx exports — applies the pre-tax factor to the Cibus-credit portion only.
 - Parses **Splitwise** CSV exports — both 1:1 and group exports (computes your household's combined share from the per-person columns).
-- Parses **Wolt** order-history CSV, with an optional tax-factor adjustment for pre-tax-salary benefits.
+- Parses **Wolt** order-history CSV, with the same pre-tax factor applied to each order.
+- **Deduplicates** Wolt orders that were paid via Cibus credit (they appear in both files), preferring the Wolt amount as authoritative.
 - Appends new rows to your Google Sheet using a deterministic UUID per expense, so re-running is **idempotent** — nothing is ever duplicated or overwritten.
 - Never touches the manual columns (`קטגוריית תקציב`, `הערות`) — you fill those in by hand after syncing.
 
@@ -66,7 +68,13 @@ The household members come from `person_names` in config, matched case-insensiti
 
 ### Wolt order history
 
-Tab-separated CSV export. `Wolt Gift Card` top-ups are skipped (they already appear on the CC). Zero-amount rows (cancellations, orders fully covered by a gift card) are skipped. If `wolt_tax_factor` is set, every order amount is multiplied by it — useful when Wolt is paid from pre-tax salary at a marginal tax rate (a factor below 1 discounts each order accordingly).
+Tab-separated CSV export. `Wolt Gift Card` top-ups are skipped (loading the Wolt wallet, accounted for via Cibus or CC). Zero-amount rows (cancellations, orders fully covered by a gift card) are skipped. If `pretax_factor` is set, every order amount is multiplied by it — useful when Wolt is paid from pre-tax salary at a marginal tax rate (a factor below 1 discounts each order accordingly).
+
+### Cibus (Pluxee) meal-card
+
+Xlsx export from the Cibus dashboard. Each row has a Cibus-credit (employer) portion and an optional CC supplement when Cibus credit ran short. The amount written to the sheet is `employer × pretax_factor + cc` — the CC supplement is **not** discounted because it comes from a personal CC, not pre-tax salary. `Wolt - Wolt Gift Card` rows (loading the Wolt wallet) and incomplete-status rows are skipped.
+
+A Wolt order paid via Cibus appears in both the Cibus xlsx and the Wolt CSV. After parsing, the tool deduplicates these by `(date, store)` and overrides the Cibus row's amount with the Wolt gross — Wolt reports the actual final amount after refunds (e.g. weight-based items where extra credit was reserved and refunded).
 
 ## Configuration
 
@@ -78,10 +86,10 @@ See [`config.example.yaml`](config.example.yaml) for the annotated template. Key
 | `credentials_path` | Path to your Google service account JSON key |
 | `sheet_name` | Worksheet tab name (default `expenses`) |
 | `person_names` | Household members, matched against Splitwise group columns |
-| `wolt_tax_factor` | Optional multiplier for Wolt amounts (default `1.0`) |
+| `pretax_factor` | Optional multiplier for Wolt amounts and the Cibus-credit portion of Cibus rows (default `1.0`) |
 | `input_dir` | Folder to auto-scan for export files |
 
-The `input_dir` workflow is preferred; for explicit file lists, use `cc_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`. See [`config_test.yaml`](config_test.yaml) for an example pointing at `example_input/`.
+The `input_dir` workflow is preferred; for explicit file lists, use `cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`. See [`config_test.yaml`](config_test.yaml) for an example pointing at `example_input/`.
 
 ## Sheet layout
 

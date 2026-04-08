@@ -17,11 +17,11 @@ def _parse_wolt_date(date_str: str) -> str | None:
     return None
 
 
-def parse_wolt(file_path: str, tax_factor: float = 1.0) -> list[dict]:
+def parse_wolt(file_path: str, pretax_factor: float = 1.0) -> list[dict]:
     """
     Parse a Wolt order history CSV export.
 
-    tax_factor: multiplier applied to each order amount to reflect the
+    pretax_factor: multiplier applied to each order amount to reflect the
       real cost after income tax considerations (used when Wolt
       payments come from pre-tax salary at your marginal rate).
 
@@ -52,7 +52,8 @@ def parse_wolt(file_path: str, tax_factor: float = 1.0) -> list[dict]:
                 continue
 
             expense = make_expense(date=date, source="wolt", description=store, amount=amount)
-            expense["סכום"] = round(amount * tax_factor, 2)
+            expense["סכום"] = round(amount * pretax_factor, 2)
+            expense["_meta"] = {"kind": "wolt", "store_norm": store, "raw_amount": amount}
             expenses.append(expense)
 
     return expenses

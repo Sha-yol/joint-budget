@@ -64,6 +64,20 @@ def _is_cc_excel(file_path: str) -> bool:
         return False
 
 
+def _is_cibus_excel(file_path: str) -> bool:
+    """Check if an Excel file looks like a Cibus meal-card export."""
+    try:
+        wb = openpyxl.load_workbook(file_path)
+        ws = wb.active
+        for row in ws.iter_rows(max_row=10, values_only=True):
+            cell = str(row[0] or "")
+            if "שם בית העסק" in cell:
+                return True
+        return False
+    except Exception:
+        return False
+
+
 def discover_files(input_dir: str, person_names: list[str]) -> dict:
     """
     Auto-discover and classify input files in a directory.
@@ -76,11 +90,14 @@ def discover_files(input_dir: str, person_names: list[str]) -> dict:
         }
     """
     input_path = Path(input_dir)
-    result = {"cc_files": [], "splitwise_regular": [], "splitwise_group": [], "wolt": []}
+    result = {"cc_files": [], "cibus": [], "splitwise_regular": [], "splitwise_group": [], "wolt": []}
 
     for f in sorted(input_path.iterdir()):
-        if f.suffix.lower() in (".xlsx", ".xls") and _is_cc_excel(str(f)):
-            result["cc_files"].append(str(f))
+        if f.suffix.lower() in (".xlsx", ".xls"):
+            if _is_cibus_excel(str(f)):
+                result["cibus"].append(str(f))
+            elif _is_cc_excel(str(f)):
+                result["cc_files"].append(str(f))
         elif f.suffix.lower() == ".csv":
             csv_type = _classify_csv(str(f))
             if csv_type:

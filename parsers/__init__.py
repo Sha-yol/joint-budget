@@ -1,10 +1,12 @@
 from .cc import parse_cc_excel
+from .cibus import parse_cibus
 from .splitwise import parse_splitwise_regular, parse_splitwise_group
 from .wolt import parse_wolt
 from .discover import discover_files
 
 __all__ = [
     "parse_cc_excel",
+    "parse_cibus",
     "parse_splitwise_regular",
     "parse_splitwise_group",
     "parse_wolt",

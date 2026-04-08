@@ -11,9 +11,10 @@ person_names:
   - "Alice"
   - "Bob"
 
-# ── Wolt tax factor ───────────────────────────────────────────────────────────
-# Marginal tax rate applied to Wolt order amounts (see config.example.yaml).
-wolt_tax_factor: 1.0
+# ── Pre-tax factor ────────────────────────────────────────────────────────────
+# Applied to Wolt orders and to the Cibus-credit portion of Cibus rows
+# (see config.example.yaml).
+pretax_factor: 1.0
 
 # ── Input files ──────────────────────────────────────────────────────────────
 # Supported CSV types:
@@ -27,6 +28,10 @@ wolt_tax_factor: 1.0
 cc_files:
   - path: "example_input/1234_03_2026.xlsx"
   # - path: "example_input/XXXX_03_2026.xlsx"  # second CC
+
+# Cibus (Pluxee) meal-card exports
+cibus_files:
+  - path: "example_input/cibus.xlsx"
 
 # Splitwise 1:1 export (non-group expenses between you and your partner)
 splitwise_regular_files:
