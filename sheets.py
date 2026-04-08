@@ -72,7 +72,7 @@ def sync_to_sheets(
     new_expenses.sort(key=lambda x: x["תאריך"])
 
     rows_to_add = [
-        [exp["_id"], exp["תאריך"], exp["מקור"], exp["תיאור"], exp["סכום"], "", ""]
+        [exp["_id"], exp["תאריך"], "'" + exp["מקור"], exp["תיאור"], exp["סכום"], "", ""]
         for exp in new_expenses
     ]
 
