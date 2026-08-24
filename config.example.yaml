@@ -11,25 +11,12 @@ person_names:
   - "Alice"
   - "Bob"
 
-# ── Pre-tax factor ────────────────────────────────────────────────────────────
-# Marginal tax rate applied to Wolt order amounts and to the Cibus-credit
-# (employer) portion of Cibus transactions. Both are funded from pre-tax salary,
-# so multiplying by this factor reflects the true net cost.
-# E.g. a factor below 1 discounts each NIS accordingly.
-# The CC supplement on a Cibus row (שולם באשראי) is NOT discounted.
-# Default: 1.0 (no adjustment).
-pretax_factor: 1.0
-
 # ── Input files ──────────────────────────────────────────────────────────────
 # Drop all export files into one folder. The script auto-detects file types:
-#   .xlsx with Isracard header    → CC transaction file
-#   .xlsx with Cibus header       → Cibus meal-card export
-#   .csv with ≤2 person columns   → Splitwise regular (1:1)
-#   .csv with 3+ person columns   → Splitwise group
-#   .csv with Wolt header         → Wolt order history
-#     (tab-separated: Date, Category, Amount, Currency Symbol, Store)
+#   .xlsx with a 'חיובים בשקלים' sheet → Mizrahi 'all credit cards' export
+#   .csv with ≤2 person columns        → Splitwise regular (1:1)
+#   .csv with 3+ person columns        → Splitwise group
 #
-# Safe to include multiple months of CC files — dedup handles overlaps.
-# Cibus rows that match Wolt CSV rows (same date+store) are auto-deduplicated.
+# Safe to include multiple months of files — dedup handles overlaps.
 
 input_dir: "example_input"

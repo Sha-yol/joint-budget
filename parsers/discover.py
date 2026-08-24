@@ -6,14 +6,10 @@ from pathlib import Path
 import openpyxl
 
 
-_WOLT_HEADER = ["Date", "Category", "Amount", "Currency Symbol", "Store"]
-
-
 def _classify_csv(file_path: str) -> str | None:
     """
-    Classify a CSV as 'splitwise_regular', 'splitwise_group', 'wolt', or None.
+    Classify a CSV as 'splitwise_regular', 'splitwise_group', or None.
 
-    Wolt CSVs have a header: Date,Category,Amount,Currency Symbol,Store
     Splitwise CSVs have a header starting with "Date,Description,Category,Cost,Currency".
     Regular (1:1) exports have exactly 2 person columns after Currency.
     Group exports have 3+ person columns.
@@ -34,9 +30,6 @@ def _classify_csv(file_path: str) -> str | None:
     delimiter = "\t" if "\t" in header_line else ","
     reader = csv.reader([header_line], delimiter=delimiter)
     fields = [f.strip() for f in next(reader)]
-
-    if fields == _WOLT_HEADER:
-        return "wolt"
 
     expected_start = ["Date", "Description", "Category", "Cost", "Currency"]
     if fields[:5] != expected_start:
@@ -73,29 +66,25 @@ def _xlsx_has_marker(file_path: str, marker: str, max_row: int, sheet: str | Non
         return False
 
 
-def discover_files(input_dir: str, person_names: list[str]) -> dict:
+def discover_files(input_dir: str) -> dict:
     """
     Auto-discover and classify input files in a directory.
 
     Returns:
         {
-            "cc_files": [path, ...],
+            "mizrahi_ccs": [path, ...],
             "splitwise_regular": [path, ...],
             "splitwise_group": [path, ...],
         }
     """
     input_path = Path(input_dir)
-    result = {"cc_files": [], "cibus": [], "mizrahi_ccs": [], "splitwise_regular": [], "splitwise_group": [], "wolt": []}
+    result = {"mizrahi_ccs": [], "splitwise_regular": [], "splitwise_group": []}
 
     for f in sorted(input_path.iterdir()):
         path = str(f)
         if f.suffix.lower() in (".xlsx", ".xls"):
-            if _xlsx_has_marker(path, "שם בית העסק", max_row=10):
-                result["cibus"].append(path)
-            elif _xlsx_has_marker(path, "חשבון כרטיס", max_row=3, sheet="חיובים בשקלים"):
+            if _xlsx_has_marker(path, "חשבון כרטיס", max_row=3, sheet="חיובים בשקלים"):
                 result["mizrahi_ccs"].append(path)
-            elif _xlsx_has_marker(path, "תאריך רכישה", max_row=15):
-                result["cc_files"].append(path)
         elif f.suffix.lower() == ".csv":
             csv_type = _classify_csv(str(f))
             if csv_type:

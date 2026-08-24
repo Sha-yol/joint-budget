@@ -48,7 +48,7 @@ uv run python sync_expenses.py config.yaml
 
 ## Monthly workflow
 
-1. Export each CC statement (Isracard → Excel download)
+1. Export the "all credit cards" statement from Mizrahi (Excel download)
 2. Export Splitwise: regular expenses + each group export
 3. Drop all files into your `input_dir` folder
 4. Run `uv run python sync_expenses.py config.yaml`

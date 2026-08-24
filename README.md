@@ -1,18 +1,15 @@
 # joint-budget
 
-Consolidate joint credit-card, Cibus, Splitwise, and Wolt expenses into a single Google Sheet for monthly household budgeting.
+Consolidate credit-card and Splitwise expenses into a single Google Sheet for monthly household budgeting.
 
-Built for an Israeli household workflow: Hebrew-headed Isracard exports, Cibus (Pluxee) meal-card xlsx, Splitwise expenses split across multiple people and groups, and Wolt orders charged from pre-tax salary.
+Built for an Israeli household workflow: Hebrew-headed Mizrahi credit-card exports and Splitwise expenses split across multiple people and groups.
 
 ## What it does
 
 Drop your monthly export files into one folder and run one command. The tool:
 
-- Parses **Isracard credit card** Excel exports (Hebrew headers, multi-card aware).
-- Parses **Cibus** (Pluxee) meal-card xlsx exports — applies the pre-tax factor to the Cibus-credit portion only.
+- Parses **Mizrahi "all credit cards"** xlsx exports (Hebrew headers, multi-card aware).
 - Parses **Splitwise** CSV exports — both 1:1 and group exports (computes your household's combined share from the per-person columns).
-- Parses **Wolt** order-history CSV, with the same pre-tax factor applied to each order.
-- **Deduplicates** Wolt orders that were paid via Cibus credit (they appear in both files), preferring the Wolt amount as authoritative.
 - Appends new rows to your Google Sheet using a deterministic UUID per expense, so re-running is **idempotent** — nothing is ever duplicated or overwritten.
 - Never touches the manual columns (`קטגוריית תקציב`, `הערות`) — you fill those in by hand after syncing.
 
@@ -37,20 +34,19 @@ Full setup — Google service account, sharing the sheet with it, etc. — is in
 
 ## Monthly workflow
 
-1. Export each CC statement from Isracard (Excel).
+1. Export the "all credit cards" statement from Mizrahi (Excel).
 2. Export Splitwise (1:1 and each group) as CSV.
-3. Export Wolt order history (if applicable).
-4. Drop all files into the folder referenced by `input_dir`.
-5. `uv run python sync_expenses.py config.yaml`
-6. Fill in budget categories and notes directly in the Google Sheet.
+3. Drop all files into the folder referenced by `input_dir`.
+4. `uv run python sync_expenses.py config.yaml`
+5. Fill in budget categories and notes directly in the Google Sheet.
 
 Safe to include overlapping months of files — deduplication by deterministic ID handles it.
 
 ## Input sources
 
-### Credit card — Isracard Excel
+### Credit cards — Mizrahi "all credit cards" xlsx
 
-Downloaded from the Isracard dashboard. The parser extracts the last 4 digits of the card from the header area and uses them as the `מקור` (source) value, so transactions from different cards stay distinguishable in the sheet.
+Downloaded from the Mizrahi dashboard. The export has three currency tabs; only the NIS sheet (`חיובים בשקלים`) is read. Inside it, several card blocks are stacked vertically, each introduced by a header naming the card's last 4 digits. The parser walks every block and tags each transaction with its card's last 4 as the `מקור` (source) value, so transactions from different cards stay distinguishable in the sheet.
 
 ### Splitwise — regular (1:1)
 
@@ -66,16 +62,6 @@ For group exports (3+ person columns), only your household's **combined share** 
 
 The household members come from `person_names` in config, matched case-insensitively against Splitwise column headers. `Category == Payment` rows (settlements) are filtered out.
 
-### Wolt order history
-
-Tab-separated CSV export. `Wolt Gift Card` top-ups are skipped (loading the Wolt wallet, accounted for via Cibus or CC). Zero-amount rows (cancellations, orders fully covered by a gift card) are skipped. If `pretax_factor` is set, every order amount is multiplied by it — useful when Wolt is paid from pre-tax salary at a marginal tax rate (a factor below 1 discounts each order accordingly).
-
-### Cibus (Pluxee) meal-card
-
-Xlsx export from the Cibus dashboard. Each row has a Cibus-credit (employer) portion and an optional CC supplement when Cibus credit ran short. The amount written to the sheet is `employer × pretax_factor + cc` — the CC supplement is **not** discounted because it comes from a personal CC, not pre-tax salary. `Wolt - Wolt Gift Card` rows (loading the Wolt wallet) and incomplete-status rows are skipped.
-
-A Wolt order paid via Cibus appears in both the Cibus xlsx and the Wolt CSV. After parsing, the tool deduplicates these by `(date, store)` and overrides the Cibus row's amount with the Wolt gross — Wolt reports the actual final amount after refunds (e.g. weight-based items where extra credit was reserved and refunded).
-
 ## Configuration
 
 See [`config.example.yaml`](config.example.yaml) for the annotated template. Key fields:
@@ -86,10 +72,9 @@ See [`config.example.yaml`](config.example.yaml) for the annotated template. Key
 | `credentials_path` | Path to your Google service account JSON key |
 | `sheet_name` | Worksheet tab name (default `expenses`) |
 | `person_names` | Household members, matched against Splitwise group columns |
-| `pretax_factor` | Optional multiplier for Wolt amounts and the Cibus-credit portion of Cibus rows (default `1.0`) |
 | `input_dir` | Folder to auto-scan for export files |
 
-The `input_dir` workflow is preferred; for explicit file lists, use `cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`. See [`config_test.yaml`](config_test.yaml) for an example pointing at `example_input/` — that folder is gitignored, so populate it with your own exports before using it.
+The `input_dir` workflow is preferred; for explicit file lists, use `mizrahi_ccs_files`, `splitwise_regular_files`, `splitwise_group_files`. See [`config_test.yaml`](config_test.yaml) for an example pointing at `example_input/` — that folder is gitignored, so populate it with your own exports before using it.
 
 ## Sheet layout
 
@@ -109,9 +94,8 @@ _id | תאריך | מקור | תיאור | סכום | קטגוריית תקצי�
 sync_expenses.py        # entry point
 sheets.py               # Google Sheets idempotent upsert
 parsers/
-  cc.py                 # Isracard Excel
+  mizrahi_ccs.py        # Mizrahi 'all credit cards' xlsx
   splitwise.py          # Splitwise regular + group
-  wolt.py               # Wolt order history
   discover.py           # auto-classify files in input_dir
   common.py             # make_expense, make_expense_id, shared helpers
 config.example.yaml     # config template

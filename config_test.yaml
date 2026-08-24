@@ -11,27 +11,12 @@ person_names:
   - "Alice"
   - "Bob"
 
-# ── Pre-tax factor ────────────────────────────────────────────────────────────
-# Applied to Wolt orders and to the Cibus-credit portion of Cibus rows
-# (see config.example.yaml).
-pretax_factor: 1.0
-
 # ── Input files ──────────────────────────────────────────────────────────────
 # Supported CSV types:
 #   Splitwise regular (≤2 person columns after Currency field)
 #   Splitwise group   (3+ person columns after Currency field)
-#   Wolt order history (tab-separated: Date, Category, Amount, Currency Symbol, Store)
 #
 # Update these paths each month before running.
-
-# Joint credit card exports (Isracard Excel format)
-cc_files:
-  - path: "example_input/1234_03_2026.xlsx"
-  # - path: "example_input/XXXX_03_2026.xlsx"  # second CC
-
-# Cibus (Pluxee) meal-card exports
-cibus_files:
-  - path: "example_input/cibus.xlsx"
 
 # Mizrahi bank 'all credit cards' xlsx export
 mizrahi_ccs_files:
@@ -45,7 +30,3 @@ splitwise_regular_files:
 splitwise_group_files:
   - path: "example_input/splitwise-group-a-export.csv"
   - path: "example_input/splitwise-group-b-export.csv"
-
-# Wolt order history exports
-wolt_files:
-  - path: "example_input/wolt-orders-export.csv"
