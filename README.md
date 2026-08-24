@@ -89,7 +89,7 @@ See [`config.example.yaml`](config.example.yaml) for the annotated template. Key
 | `pretax_factor` | Optional multiplier for Wolt amounts and the Cibus-credit portion of Cibus rows (default `1.0`) |
 | `input_dir` | Folder to auto-scan for export files |
 
-The `input_dir` workflow is preferred; for explicit file lists, use `cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`. See [`config_test.yaml`](config_test.yaml) for an example pointing at `example_input/`.
+The `input_dir` workflow is preferred; for explicit file lists, use `cc_files`, `cibus_files`, `splitwise_regular_files`, `splitwise_group_files`, `wolt_files`. See [`config_test.yaml`](config_test.yaml) for an example pointing at `example_input/` — that folder is gitignored, so populate it with your own exports before using it.
 
 ## Sheet layout
 
@@ -115,8 +115,7 @@ parsers/
   discover.py           # auto-classify files in input_dir
   common.py             # make_expense, make_expense_id, shared helpers
 config.example.yaml     # config template
-config_test.yaml        # config pointing at example_input/
-example_input/          # anonymized sample files for dry-run validation
+config_test.yaml        # config pointing at example_input/ (gitignored; supply your own)
 SETUP.md                # Google service account walkthrough
 ```
 

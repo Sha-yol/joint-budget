@@ -18,7 +18,7 @@ uv run python sync_expenses.py config.yaml
 uv run python sync_expenses.py config_test.yaml --dry-run
 ```
 
-No test suite exists yet. Run the tool with `--dry-run` to validate parsing logic against real input files. `config_test.yaml` + `example_input/` (committed, anonymized) exists for exactly this purpose.
+No test suite exists yet. Run the tool with `--dry-run` to validate parsing logic against real input files. `config_test.yaml` points at `example_input/` for exactly this purpose. That folder is gitignored (it holds real financial exports), so populate it locally before running the test config.
 
 Note: `main.py` is an unused placeholder left over from `uv init`. The real entry point is `sync_expenses.py`.
 
@@ -72,7 +72,8 @@ The last two columns (`קטגוריית תקציב`, `הערות`) are manually 
 
 - `credentials.json` — Google service account key (gitignored)
 - `config.yaml` — active config (gitignored); `config.example.yaml` is the template
-- `config_test.yaml` — committed; uses explicit file lists pointed at `example_input/`. Use this for `--dry-run` validation of parser changes.
+- `config_test.yaml` — committed; uses explicit file lists pointed at `example_input/` (gitignored, supplied locally). Use this for `--dry-run` validation of parser changes.
+- `example_input/`, `input/` — gitignored; hold real exports and must never be committed.
 
 ### Config keys
 
